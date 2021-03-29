@@ -28,6 +28,15 @@
      -e "KONG_CASSANDRA_CONTACT_POINTS=kong-database" \
      kong:latest kong migrations bootstrap
 
+## Setup DB in Sandbox
+    docker run --rm \     
+     -e "KONG_DATABASE=postgres" \
+     -e "KONG_PG_HOST=kong-database" \
+     -e "KONG_PG_USER=kong" \
+     -e "KONG_PG_PASSWORD=kong" \
+     -e "KONG_CASSANDRA_CONTACT_POINTS=kong-database" \
+     kong:latest kong migrations bootstrap
+
 ## Start Kong
     docker run -d --name kong \
      --network=kong-net \
