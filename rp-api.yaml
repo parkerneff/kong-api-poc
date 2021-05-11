@@ -1,0 +1,1732 @@
+openapi: 3.0.1
+info:
+  title: Third Party Shopping And Checkout
+  version: "4.0"
+  x-logo:
+    url: https://s3.amazonaws.com/static.revolutionparts.com/assets/logos/rp-logo-stroke.png
+servers:
+- url: //api.revolutionparts.com/
+tags:
+- name: Shopping
+  description: Endpoints for creating quotes and orders.
+- name: Products
+  description: Endpoints for searching and getting offers for products.
+paths:
+  /products/category/aces/{part_terminology_id}:
+    get:
+      tags:
+      - Products
+      summary: List Products by Vehicle and ACES Category
+      description: Get a list of products for a vehicle and an ACES category.
+      operationId: categoryProducts
+      parameters:
+      - name: part_terminology_id
+        in: path
+        description: The ACES category to search for products in.
+        required: true
+        schema:
+          type: string
+      - name: base_vehicle_id
+        in: query
+        description: The ACES base vehicle id of the vehicle.
+        required: true
+        schema:
+          type: integer
+      - name: submodel_id
+        in: query
+        description: The ACES submodel id of the vehicle
+        schema:
+          type: integer
+      - name: engine_base_id
+        in: query
+        description: The ACES engine base id of the vehicle
+        schema:
+          type: integer
+      - name: fuel_id
+        in: query
+        description: The ACES fuel id of the vehicle
+        schema:
+          type: integer
+      - name: position_id
+        in: query
+        description: The ACES position id of the position the products fit in the
+          vehicle.
+        schema:
+          type: integer
+      - name: page_num
+        in: query
+        description: The page number to return the results for. The first page is
+          1 and the max page is the ceiling of count/page_size.
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        description: The number of products to return per page [1-50].
+        schema:
+          maximum: 50
+          minimum: 1
+          type: integer
+          default: 18
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryProductsResponse'
+        400:
+          description: Error message
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: API key is invalid.
+          content: {}
+        500:
+          description: Something went wrong. Please try again later.
+          content: {}
+      security:
+      - basic: []
+  /shopping/quote:
+    post:
+      tags:
+      - Shopping
+      summary: Create a Quote
+      description: Create a quote based on a shopping cart.
+      operationId: createQuote
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/CreateQuoteRequestModel'
+        required: false
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteModel'
+        400:
+          description: Invalid Request
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: API key is invalid.
+          content: {}
+        500:
+          description: Something went wrong. Please try again later.
+          content: {}
+      security:
+      - basic: []
+      x-codegen-request-body-name: CreateQuoteRequest
+  /shopping/order/{order_number}/requestCancellation:
+    post:
+      tags:
+      - Shopping
+      summary: Request Order Cancellation
+      description: Request that an order be cancelled.
+      operationId: requestCancellation
+      parameters:
+      - name: order_number
+        in: path
+        description: The RP order number provided when the order was created.
+        required: true
+        schema:
+          type: string
+      - name: cancel_reason
+        in: query
+        description: The reason a cancellation is being requested
+        required: true
+        schema:
+          type: string
+          enum:
+          - Catalog Issue
+          - Customer Requested Cancellation
+          - Part Not Available
+          - Shipping Issue
+          - Other
+      responses:
+        200:
+          description: Success
+          content: {}
+        400:
+          description: Error message
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: API key is invalid.
+          content: {}
+        500:
+          description: Something went wrong. Please try again later.
+          content: {}
+      security:
+      - basic: []
+  /shopping/order:
+    post:
+      tags:
+      - Shopping
+      summary: Create an Order
+      description: Create a order based on a quote.
+      operationId: createOrder
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequestModel'
+        required: false
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderModel'
+        400:
+          description: Invalid Request
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: API key is invalid.
+          content: {}
+        404:
+          description: Quote not found.
+          content: {}
+        500:
+          description: Something went wrong. Please try again later.
+          content: {}
+      security:
+      - basic: []
+      x-codegen-request-body-name: CreateOrderRequest
+  /catalogs/accessories:
+    get:
+      tags:
+      - Products
+      summary: Top Accessories
+      description: Gets a list of the top accessory products matching the supplied
+        vehicle
+      operationId: topAccessories
+      parameters:
+      - name: year
+        in: query
+        description: The 4-digit year of the vehicle. Required if make or model is
+          supplied.
+        schema:
+          type: integer
+      - name: make
+        in: query
+        description: The make of the vehicle. Required if year or model is supplied.
+        schema:
+          type: string
+      - name: model
+        in: query
+        description: The model of the vehicle. Required if year or make is supplied.
+        schema:
+          type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopAccessoriesResponse'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: API key is invalid.
+          content: {}
+        500:
+          description: Something went wrong. Please try again later.
+          content: {}
+      security:
+      - basic: []
+  /products:
+    get:
+      tags:
+      - Products
+      summary: Search Products
+      description: Gets a list of products matching the vehicle and search terms.
+      operationId: products
+      parameters:
+      - name: year
+        in: query
+        description: The 4-digit year of the vehicle. Required if make or model is
+          supplied.
+        schema:
+          type: integer
+      - name: make
+        in: query
+        description: The make of the vehicle. Required if year or model is supplied.
+        schema:
+          type: string
+      - name: model
+        in: query
+        description: The model of the vehicle. Required if year or make is supplied.
+        schema:
+          type: string
+      - name: vin
+        in: query
+        description: The vin of the vehicle. Required if year, make, and model are
+          not supplied. If the year, make, model, and vin are supplied and the decoded
+          vin does not match the year, make, and model supplied then the vin will
+          be used.
+        schema:
+          type: string
+      - name: search
+        in: query
+        description: The terms to search for. This could include product names or
+          mpns.
+        required: true
+        schema:
+          type: string
+      - name: page_num
+        in: query
+        description: The page number to return the results for. The first page is
+          1 and the max page is the ceiling of count/page_size.
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        description: The number of products to return per page [1-50].
+        schema:
+          maximum: 50
+          minimum: 1
+          type: integer
+          default: 18
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductsResponseV2'
+        400:
+          description: Error message
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: API key is invalid.
+          content: {}
+        500:
+          description: Something went wrong. Please try again later.
+          content: {}
+      security:
+      - basic: []
+  /products/{sku}/offers:
+    get:
+      tags:
+      - Products
+      summary: Get Offers
+      description: Gets a list of offers for a product from up to 5 participating
+        sellers.
+      operationId: offers
+      parameters:
+      - name: sku
+        in: path
+        description: The sku of the product to get offers for.
+        required: true
+        schema:
+          type: string
+      - name: latitude
+        in: query
+        description: The latitude of the buyer. Required if longitude is provided.
+        schema:
+          type: string
+      - name: longitude
+        in: query
+        description: The longitude of the buyer. Required if latitude is provided.
+        schema:
+          type: string
+      - name: postal_code
+        in: query
+        description: The postal code of the buyer. Required if latitude and longitude
+          are not provided.
+        schema:
+          type: string
+      - name: seller_identifier
+        in: query
+        description: If provided, only an offer for this seller will be returned.
+        schema:
+          type: string
+      - name: brand
+        in: query
+        description: Filter offers by brand. A single SKU or manufacturer part number
+          (MPN) can have two offers. For example, Honda and Acura can share the same
+          SKU but offer the product at a different price and warranty. By specifying
+          the brand the result is narrowed to the specified brand only.
+        schema:
+          type: string
+      - name: year
+        in: query
+        description: The 4-digit year of the vehicle. Required if make or model is
+          supplied.
+        schema:
+          type: integer
+      - name: make
+        in: query
+        description: The make of the vehicle. Required if year or model is supplied.
+        schema:
+          type: string
+      - name: model
+        in: query
+        description: The model of the vehicle. Required if year or make is supplied.
+        schema:
+          type: string
+      - name: vin
+        in: query
+        description: The vin of the vehicle. Required if year, make, and model are
+          not supplied. If the year, make, model, and vin are supplied and the decoded
+          vin does not match the year, make, and model supplied then the vin will
+          be used.
+        schema:
+          type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OffersResponse'
+        400:
+          description: Error message
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          description: API key is invalid.
+          content: {}
+        500:
+          description: Something went wrong. Please try again later.
+          content: {}
+      security:
+      - basic: []
+components:
+  schemas:
+    BaseResponse:
+      type: object
+      properties:
+        warnings:
+          type: array
+          description: Any warnings encountered while processing the request..
+          example:
+          - Decoded vin does not match the provided year, make, and model. Using the
+            vin.
+          items:
+            type: string
+    Assembly:
+      type: object
+      properties:
+        products:
+          type: array
+          description: An array of assembly product objects for the callouts in the
+            assembly image.
+          items:
+            $ref: '#/components/schemas/AssemblyProduct'
+        image:
+          $ref: '#/components/schemas/ImageV2'
+    AssemblyProduct:
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/ProductV2'
+        callout_id:
+          type: integer
+          description: The callout id in the assembly image for this product.
+        contextual_name:
+          type: string
+          description: The product name specific to the selected vehicle.
+          example: ""
+        contextual_description:
+          type: string
+          description: The description specific to the selected vehicle.
+          example: ""
+    CategoriesListResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          description: An array of category detail objects.
+          items:
+            $ref: '#/components/schemas/CategoryDetail'
+    CategoriesResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          description: An array of category objects matching the request.
+          items:
+            $ref: '#/components/schemas/Category'
+    Category:
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of category. Possible values are POPULAR or RP
+          example: RP
+          enum:
+          - POPULAR
+          - RP
+        label:
+          type: string
+          description: The label for the category.
+          example: ""
+        subcategories:
+          type: array
+          description: An array of An array of subcategory objects for the category.
+          items:
+            $ref: '#/components/schemas/Subcategory'
+        image:
+          $ref: '#/components/schemas/ImageV2'
+    CategoryAssembliesResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: The total number of products matching the search terms.
+          format: int32
+          example: 2
+        pages:
+          type: integer
+          description: The total number of pages of products matching the search terms
+            (based on the page_size).
+          format: int32
+          example: 5
+        assemblies:
+          type: array
+          description: An array of assembly objects matching the vehicle and category.
+          items:
+            $ref: '#/components/schemas/Assembly'
+    CategoryDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of category. Possible values are POPULAR or RP
+          example: RP
+          enum:
+          - POPULAR
+          - RP
+        category:
+          type: string
+          description: The label for the category.
+          example: ""
+        subcategory:
+          type: string
+          description: The label for the subcategory.
+          example: ""
+        identifier:
+          type: string
+          description: The identifier for the subcategory.
+          example: ""
+    CategoryProductsResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: The total number of products matching the search terms.
+          format: int32
+          example: 2
+        pages:
+          type: integer
+          description: The total number of pages of products matching the search terms
+            (based on the page_size).
+          format: int32
+          example: 5
+        products:
+          type: array
+          description: An array of product objects matching the vehicle and category.
+          items:
+            $ref: '#/components/schemas/ProductV2'
+    Subcategory:
+      type: object
+      properties:
+        identifier:
+          type: string
+          description: The identifier for the subcategory.
+          example: "1"
+        label:
+          type: string
+          description: The label for the subcategory.
+          example: ""
+        image:
+          $ref: '#/components/schemas/ImageV2'
+    CheckoutDetail:
+      type: object
+      properties:
+        status_code:
+          $ref: '#/components/schemas/CheckoutStatus'
+        status_message:
+          type: string
+          description: A message about the checkout status.
+        seller:
+          $ref: '#/components/schemas/Seller'
+        buyer_email:
+          type: string
+          description: The buyer’s email address if checkout was successful, otherwise
+            empty.
+        order_total:
+          type: number
+          description: The total amount of the order including items, tax, and shipping
+            if checkout was successful, otherwise empty.
+          format: float
+        order_items:
+          type: array
+          description: An array of order item objects which includes all items in
+            the order if checkout was successful, otherwise empty.
+          items:
+            $ref: '#/components/schemas/OrderItem'
+    CheckoutDetailResponse:
+      type: object
+      properties:
+        detail:
+          $ref: '#/components/schemas/CheckoutDetail'
+    CheckoutStatus:
+      type: integer
+      description: "The status code from the checkout:\n  *   0    - Checkout was\
+        \ completed.\n  *   1 \t - Checkout was cancelled by the buyer.\n  *   1000\
+        \ - Something went wrong, please try again later.\n  *   1001 - The seller\
+        \ did not match for all products in the cart.\n  *   1002 - The payload did\
+        \ not contain any products.\n  *   1003 - The JWT signature is invalid.\n\
+        \  *   1004 - The JWT token is not yet valid\n  *   1005 - The JWT token has\
+        \ expired\n  *   1006 - There were no products found in the cart\n  *   1007\
+        \ - The payload contained an invalid product\n  *   1008 - The order failed\
+        \ to process"
+    CreateCheckoutRequest:
+      type: object
+      properties:
+        cart:
+          type: array
+          description: An array of cart item models.
+          items:
+            $ref: '#/components/schemas/CartItemModel'
+        return_url:
+          type: string
+          description: The URL to redirect to after a successful checkout.
+        cancel_url:
+          type: string
+          description: The URL to redirect to after the user cancels checkout.
+    OrderItem:
+      type: object
+      properties:
+        mpn:
+          type: string
+          description: The manufacturer's product number.
+        product_name:
+          type: string
+          description: The name of the product.
+        quantity:
+          type: integer
+          description: The quantity of the product purchased.
+    SetCheckoutResponse:
+      type: object
+      properties:
+        checkout_url:
+          type: string
+          description: The url to redirect to to complete checkout.
+    AccessoryImage:
+      type: object
+      properties:
+        filename:
+          type: string
+          description: The URL of the image.
+          example: //dz310nzuyimx0.cloudfront.net/strapr1/159a7b1cd3a406ce25856cbbfa3eff21/6549fe77949819c38ffb02401dae5ab5.png
+        width:
+          type: number
+          description: The width of the image.
+          format: integer
+          example: 300.0
+        height:
+          type: number
+          description: The height of the image.
+          format: integer
+          example: 300.0
+        type:
+          type: string
+          description: The type of the image.
+          example: CATALOG
+    Image:
+      type: object
+      properties:
+        url:
+          type: string
+          description: The URL of the image.
+          example: //dz310nzuyimx0.cloudfront.net/strapr1/159a7b1cd3a406ce25856cbbfa3eff21/6549fe77949819c38ffb02401dae5ab5.png
+        notes:
+          type: string
+          description: Any supplemental image information including the product or
+            sub-assembly in the assembly image.
+          example: 'Product or sub-assembly is #1 in diagram. Diagram may not be specific
+            to your vehicle.'
+    ImageSize:
+      type: object
+      properties:
+        width:
+          type: number
+          description: The width of the image.
+          format: integer
+          example: 300.0
+        url:
+          type: string
+          description: The URL of the image.
+          example: //dz310nzuyimx0.cloudfront.net/strapr1/159a7b1cd3a406ce25856cbbfa3eff21/6549fe77949819c38ffb02401dae5ab5.png
+    ImageV2:
+      title: Image
+      type: object
+      properties:
+        notes:
+          type: string
+          description: Any supplemental image information including the product or
+            sub-assembly in the assembly image.
+          example: 'Product or sub-assembly is #1 in diagram. Diagram may not be specific
+            to your vehicle.'
+        sizes:
+          type: array
+          description: An array of available sizes for this image. This array is ordered
+            by the image width from greatest to least.
+          items:
+            $ref: '#/components/schemas/ImageSize'
+    OrderResponse:
+      type: object
+      properties:
+        orders:
+          type: array
+          description: An array of orders matching the supplied filters.
+          items:
+            $ref: '#/components/schemas/OrderV2'
+    OrderUpdateCallback:
+      type: object
+      properties:
+        order_number:
+          type: string
+          description: The RevolutionParts order number.
+        timestamp:
+          type: number
+          description: The timestamp of the event.
+          format: int
+        token:
+          type: string
+          description: Randomly generated token.
+        signature:
+          type: string
+          description: HMAC digest.
+    OrderV2:
+      title: Order
+      type: object
+      properties:
+        billing_address:
+          $ref: '#/components/schemas/AddressModel'
+        completed_date:
+          type: string
+          description: The date that the order was completed and shipped.
+          format: date-time
+        created_date:
+          type: string
+          description: The date that the order was created.
+          format: date-time
+        custom_field1:
+          type: string
+          description: A custom field that was defined when the order was created.
+        custom_field2:
+          type: string
+          description: A custom field that was defined when the order was created.
+        custom_field3:
+          type: string
+          description: A custom field that was defined when the order was created.
+        external_order_number:
+          type: string
+          description: A custom order number that was defined when the order was created.
+        handling_fee:
+          type: number
+          description: The handling fee for the order.
+          format: float
+        order_number:
+          type: string
+          description: The RevolutionParts order number.
+        order_status:
+          type: string
+          description: The current status of the order.
+        placed_date:
+          type: string
+          description: The date that the order was placed.
+          format: date-time
+        shipping_address:
+          $ref: '#/components/schemas/AddressModel'
+        shipping_method:
+          $ref: '#/components/schemas/ShippingMethodModel'
+        store_order_number:
+          type: string
+          description: The order number from the store where the order was placed.
+        subtotal:
+          type: number
+          description: The subtotal for the order.
+          format: float
+        tax:
+          type: number
+          description: The tax amount for the order.
+          format: float
+        total:
+          type: number
+          description: The total for the order.
+          format: float
+        updated_date:
+          type: string
+          description: The date that the order was last updated.
+          format: date-time
+        dms_invoice_number:
+          type: string
+          description: The DMS Invoice ID associated with the order.
+        dms_quote_number:
+          type: string
+          description: The DMS Quote ID associated with the order.
+        dms_export_date:
+          type: string
+          description: The timestamp indicating when the order was approved for DMS
+            export.
+          format: date-time
+    Accessory:
+      type: object
+      properties:
+        title:
+          type: string
+          description: The name of the product.
+        description:
+          type: string
+          description: The description of the product.
+        notes:
+          type: string
+          description: Additional details or notes for the product.
+        part_number:
+          type: string
+          description: The manufacturer's product number.
+        manufacturer:
+          type: string
+          description: The brand of the product.
+        images:
+          type: array
+          description: An array of image objects.
+          items:
+            $ref: '#/components/schemas/AccessoryImage'
+        cost:
+          type: number
+          description: The cost of the product. Only available if there is no MSRP.
+          format: float
+        msrp:
+          type: number
+          description: The MSRP of the product.
+          format: float
+        core:
+          type: number
+          description: The core charge of the product.
+          format: float
+        catalog:
+          type: string
+          description: The catalog type of the product.
+          enum:
+          - PARTS
+          - ACCESSORIES
+        labor_time:
+          type: number
+          description: The time in hours to install the product.
+          format: float
+    CarInfo:
+      type: object
+      properties:
+        year:
+          type: integer
+          description: The 4 digit year parsed from the URL.
+          format: int32
+        make:
+          type: string
+          description: The make parsed from the URL.
+        model:
+          type: string
+          description: The model parsed from the URL.
+    Fitment:
+      type: object
+      properties:
+        year:
+          type: integer
+          description: The year of the vehicle the product fits.
+          format: base32
+        make:
+          type: string
+          description: The make of the vehicle the product fits.
+        model:
+          type: string
+          description: The model of the vehicle the product fits.
+        trim_engine:
+          type: array
+          description: An array of trim and engines of the vehicle the product fits.
+          items:
+            $ref: '#/components/schemas/TrimEngine'
+    Offer:
+      type: object
+      properties:
+        token:
+          type: string
+          description: The token for this offer (for later use in cart)
+        seller:
+          $ref: '#/components/schemas/Seller'
+        product:
+          $ref: '#/components/schemas/ProductV2'
+    OffersResponse:
+      type: object
+      properties:
+        offers:
+          type: array
+          description: An array of offer objects matching the brand and mpn.
+          items:
+            $ref: '#/components/schemas/Offer'
+    Product:
+      type: object
+      properties:
+        brand:
+          type: string
+          description: The brand of the product.
+        product_name:
+          type: string
+          description: The name of the product.
+        mpn:
+          type: string
+          description: The manufacturer's product number.
+        msrp:
+          type: number
+          description: The MSRP of the product.
+          format: float
+        cost:
+          type: number
+          description: The cost of the product. Only available if there is no MSRP.
+          format: float
+        is_discontinued:
+          type: boolean
+          description: True if the product has been discontinued, otherwise false.
+        is_hazmat:
+          type: boolean
+          description: True if the product is considered hazmat, otherwise false.
+        images:
+          type: array
+          description: An array of image objects.
+          items:
+            $ref: '#/components/schemas/Image'
+        core_charge:
+          type: number
+          description: The core charge of the product.
+          format: float
+        catalog_type:
+          type: string
+          description: The catalog type of the product.
+          enum:
+          - PARTS
+          - ACCESSORIES
+        also_known_as:
+          type: array
+          description: An array of product names this product is also known by.
+          items:
+            type: string
+        positions:
+          type: string
+          description: A comma separated list of positions the product fits in the
+            vehicle.
+        description:
+          type: string
+          description: The description of the product.
+        footnote:
+          type: string
+          description: Additional details or notes for the product.
+        application:
+          type: string
+          description: The typical usage of the product.
+        fitment:
+          type: array
+          description: An array of vehicles this product fits.
+          items:
+            type: string
+        supersedes:
+          type: array
+          description: An array of mpns that have been superseded by the product.
+          items:
+            type: string
+        category:
+          type: string
+          description: The category for this product. This can be up to 2 levels separated
+            by a '/'
+    ProductV2:
+      title: Product
+      type: object
+      properties:
+        brand:
+          type: string
+          description: The brand of the product.
+        product_name:
+          type: string
+          description: The name of the product.
+        sku:
+          type: string
+          description: The sku of the product.
+        mpn:
+          type: string
+          description: The manufacturer's product number.
+        msrp:
+          type: number
+          description: The MSRP of the product.
+          format: float
+        price:
+          type: number
+          description: The sale price of the product. Only returned in the context
+            of an offer from a seller.
+          format: float
+        min_price:
+          type: number
+          description: The estimated minimum sale price of the product across all
+            sellers.
+          format: float
+        max_price:
+          type: number
+          description: The estimated maximum sale price of the product across all
+            sellers.
+          format: float
+        is_discontinued:
+          type: boolean
+          description: True if the product has been discontinued, otherwise false.
+        is_hazmat:
+          type: boolean
+          description: True if the product is considered hazmat, otherwise false.
+        is_in_stock:
+          type: boolean
+          description: True if the product is in stock (at least quantity 1), false
+            if the product is not in stock, or null if in stock status is unknown.
+            If a product is not in stock, it generally means the product is still
+            available with a longer lead time.
+        is_local_pickup_only:
+          type: boolean
+          description: True if the seller only allows local pickup of the product,
+            i.e., they do not ship it (reasons may include bulky items, hazmat, etc).
+        images:
+          type: array
+          description: An array of image objects.
+          items:
+            $ref: '#/components/schemas/ImageV2'
+        core_charge:
+          type: number
+          description: The core charge of the product.
+          format: float
+        other_names:
+          type: array
+          description: An array of product names this product is also known by.
+          items:
+            type: string
+        positions:
+          type: string
+          description: A comma separated list of positions the product fits in the
+            vehicle.
+        description:
+          type: string
+          description: The description of the product.
+        notes:
+          type: string
+          description: Additional details or notes for the product.
+        fitment:
+          type: array
+          description: An array of vehicles this product fits.
+          items:
+            type: string
+        structured_fitment:
+          type: array
+          description: An array of fitment objects this product fits.
+          items:
+            $ref: '#/components/schemas/Fitment'
+        fitment_confirmed:
+          type: boolean
+          description: 'True if the product fits the supplied year, make, and model,
+            false if the product does not fit the supplied year, make, and model,
+            or null if fitment cannot be determined. Note: True only indicates that
+            the product will fit the year, make, and model supplied. It does not indicate
+            that the product will fit the trim and engine.'
+        has_more_fitments:
+          type: boolean
+          description: True if the product fits more vehicles than were returned in
+            the fitment or structured_fitment fields.
+        supersedes:
+          type: array
+          description: An array of mpns that have been superseded by the product.
+          items:
+            type: string
+    ProductsResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: The first error encountered while processing the request.
+        count:
+          type: integer
+          description: The total number of products matching the search terms.
+          format: int32
+          example: 2
+        pages:
+          type: integer
+          description: The total number of pages of products matching the search terms
+            (based on the page_size).
+          format: int32
+          example: 5
+        year:
+          type: integer
+          description: The 4 digit year parsed from the search string or the decoded
+            vin.
+          format: int32
+          example: 2014
+        make:
+          type: string
+          description: The make parsed from the search string or the decoded vin.
+        model:
+          type: string
+          description: The model parsed from the search string or the decoded vin.
+        vin:
+          type: string
+          description: The parsed vin from the search string.
+        search_terms:
+          type: string
+          description: The search terms parsed from the search string.
+        products:
+          type: array
+          description: An array of product objects matching the vehicle and category.
+          items:
+            $ref: '#/components/schemas/Product'
+    ProductsResponseV2:
+      title: ProductsResponse
+      type: object
+      properties:
+        count:
+          type: integer
+          description: The total number of products matching the search terms.
+          format: int32
+          example: 2
+        pages:
+          type: integer
+          description: The total number of pages of products matching the search terms
+            (based on the page_size).
+          format: int32
+          example: 5
+        products:
+          type: array
+          description: An array of product objects matching the vehicle and category.
+          items:
+            $ref: '#/components/schemas/ProductV2'
+    Seller:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the seller
+        identifier:
+          type: string
+          description: The identifier of the seller.
+        support_phone:
+          type: string
+          description: The support phone of the seller.
+        inventory_cutoff_time:
+          type: string
+          description: The cutoff time for shipping today if the item is in stock.
+          format: date-time
+    TopAccessoriesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: True if the request was successful, otherwise false.
+        car_info:
+          type: array
+          description: The year, make, and model of the selected car.
+          items:
+            $ref: '#/components/schemas/CarInfo'
+        accessories:
+          type: array
+          description: An array of top accessories for the selected vehicle.
+          items:
+            $ref: '#/components/schemas/Accessory'
+    TrimEngine:
+      type: object
+      properties:
+        trim:
+          type: string
+          description: The trim of the vehicle.
+        engine:
+          type: string
+          description: The engine of the vehicle.
+    AddressModel:
+      title: Address
+      type: object
+      properties:
+        address1:
+          type: string
+          description: Street address line 1.
+        address2:
+          type: string
+          description: Street address line 2.
+        city:
+          type: string
+          description: The name of the city
+        company:
+          type: string
+          description: The name of the company.
+        country:
+          $ref: '#/components/schemas/CountryModel'
+        name:
+          type: string
+          description: The name associated with the address.
+        phone_number:
+          type: string
+          description: The phone number for the address.
+        postal_code:
+          type: string
+          description: The postal code for the address.
+        state:
+          $ref: '#/components/schemas/StateModel'
+    CountryModel:
+      title: Country
+      type: object
+      properties:
+        iso_alpha2:
+          type: string
+          description: ISO Alpha2 Code for the Country
+        iso_alpha3:
+          type: string
+          description: ISO Alpha3 Code for the Country
+        iso_number:
+          type: string
+          description: ISO Number for the Country
+        name:
+          type: string
+          description: The name of the country
+    StateModel:
+      title: State
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the state.
+        short_name:
+          type: string
+          description: The short name of the state.
+    CartItemModel:
+      title: CartItem
+      type: object
+      properties:
+        offer_token:
+          type: string
+          description: The offer token from the offers API call
+        quantity:
+          type: integer
+          description: The quantity of the product to purchase.
+    CreateOrderRequestModel:
+      title: CreateOrderRequest
+      type: object
+      properties:
+        billing_address:
+          $ref: '#/components/schemas/AddressModel'
+        custom_field1:
+          type: string
+          description: A custom field that is returned in all order queries and notifications.
+        custom_field2:
+          type: string
+          description: A custom field that is returned in all order queries and notifications.
+        custom_field3:
+          type: string
+          description: A custom field that is returned in all order queries and notifications.
+        external_order_number:
+          type: string
+          description: A custom order number that is returned in all order queries
+            and notifications.
+        quote_id:
+          type: string
+          description: The unique identifier of the quote to create an order from.
+        payment_option:
+          type: string
+          description: The payment option to use for the order from the available
+            payment options in create quote.
+        shipping_method:
+          type: string
+          description: The shipping method to use for the order from the available
+            shipping methods in create quote.
+    CreateQuoteRequestModel:
+      title: CreateQuoteRequest
+      type: object
+      properties:
+        cart:
+          type: array
+          description: An array of cart item models.
+          items:
+            $ref: '#/components/schemas/CartItemModel'
+        shipping_address:
+          $ref: '#/components/schemas/AddressModel'
+    LineItemModel:
+      title: LineItem
+      type: object
+      properties:
+        brand:
+          type: string
+          description: The brand of the item.
+        core_charge:
+          type: number
+          description: The core charge for the item.
+          format: float
+        options:
+          type: array
+          description: The options for the product. Not currently implemented.
+          items:
+            type: object
+            properties: {}
+        quantity:
+          type: integer
+          description: The quantity of the item.
+        sale_price:
+          type: number
+          description: The price of the item.
+          format: float
+        sku:
+          type: string
+          description: The SKU of the item.
+        title:
+          type: string
+          description: The title of the item.
+        total_price:
+          type: number
+          description: The total price of the line item including core charge and
+            quantity.
+          format: float
+    OrderModel:
+      title: Order
+      type: object
+      properties:
+        billing_address:
+          $ref: '#/components/schemas/AddressModel'
+        completed_date:
+          type: string
+          description: The date that the order was completed and shipped.
+          format: date-time
+        created_date:
+          type: string
+          description: The date that the order was created.
+          format: date-time
+        custom_field1:
+          type: string
+          description: A custom field that was defined when the order was created.
+        custom_field2:
+          type: string
+          description: A custom field that was defined when the order was created.
+        custom_field3:
+          type: string
+          description: A custom field that was defined when the order was created.
+        external_order_number:
+          type: string
+          description: A custom order number that was defined when the order was created.
+        handling_fee:
+          type: number
+          description: The handling fee for the order.
+          format: float
+        order_number:
+          type: string
+          description: The RevolutionParts order number.
+        order_status:
+          type: string
+          description: The current status of the order.
+        placed_date:
+          type: string
+          description: The date that the order was placed.
+          format: date-time
+        shipping_address:
+          $ref: '#/components/schemas/AddressModel'
+        shipping_method:
+          $ref: '#/components/schemas/ShippingMethodModel'
+        store_order_number:
+          type: string
+          description: The order number from the store where the order was placed.
+        subtotal:
+          type: number
+          description: The subtotal for the order.
+          format: float
+        tax:
+          type: number
+          description: The tax amount for the order.
+          format: float
+        total:
+          type: number
+          description: The total for the order.
+          format: float
+        updated_date:
+          type: string
+          description: The date that the order was last updated.
+          format: date-time
+    PaymentOptionModel:
+      title: PaymentOption
+      type: object
+      properties:
+        payment_type:
+          type: string
+          description: The type of payment
+          example: INVOICE
+        payment_label:
+          type: string
+          description: The label of the payment type
+          example: Invoice
+    QuoteModel:
+      title: Quote
+      type: object
+      properties:
+        completed_date:
+          type: string
+          description: The date that the quote was completed.
+          format: date-time
+        created_date:
+          type: string
+          description: The date that the quote was created.
+          format: date-time
+        handling_fee:
+          type: number
+          description: The handling fee for the order.
+          format: float
+        line_items:
+          type: array
+          description: The line items included in the quote.
+          items:
+            $ref: '#/components/schemas/LineItemModel'
+        payment_options:
+          type: array
+          description: The available payment options for the quote.
+          items:
+            $ref: '#/components/schemas/PaymentOptionModel'
+        prices_valid_until:
+          type: string
+          description: The date that the prices for the quote are guaranteed.
+          format: date-time
+        quote_id:
+          type: string
+          description: The unique identifier of the quote to create an order from.
+        shipping_address:
+          $ref: '#/components/schemas/AddressModel'
+        shipping_methods:
+          type: array
+          description: The available shipping methods for the quote.
+          items:
+            $ref: '#/components/schemas/ShippingMethodModel'
+        subtotal:
+          type: number
+          description: The subtotal for the quote.
+          format: float
+        tax:
+          type: number
+          description: The tax for the quote.
+          format: float
+        total:
+          type: number
+          description: The total for the quote. Additional cost and tax depending
+            on shipping method.
+          format: float
+        updated_date:
+          type: string
+          description: The date of the last update.
+          format: date-time
+    ShippingMethodModel:
+      title: ShippingMethod
+      type: object
+      properties:
+        additional_tax:
+          type: number
+          description: Additional tax if shipping is taxable otherwise 0.
+          format: float
+        amount:
+          type: number
+          description: The confirmed shipping amount of the shipping method.
+          format: float
+        delivery_range_max:
+          type: string
+          description: The latest delivery date.
+          format: date
+        delivery_range_min:
+          type: string
+          description: The earliest delivery date.
+          format: date
+        delivery_label:
+          type: string
+          description: The consumer friendly description of the shipping method.
+        delivery_type:
+          type: string
+          description: The delivery type of the shipping method
+        estimated_amount:
+          type: number
+          description: The estimated shipping amount of the shipping method.
+          format: float
+  parameters:
+    page_num:
+      name: page_num
+      in: query
+      description: The page number to return the results for. The first page is 1
+        and the max page is the ceiling of count/page_size.
+      schema:
+        type: integer
+        default: 1
+    page_size:
+      name: page_size
+      in: query
+      description: The number of products to return per page [1-50].
+      schema:
+        maximum: 50
+        minimum: 1
+        type: integer
+        default: 18
+    year:
+      name: year
+      in: query
+      description: The 4-digit year of the vehicle. Required if make or model is supplied.
+      schema:
+        type: integer
+    make:
+      name: make
+      in: query
+      description: The make of the vehicle. Required if year or model is supplied.
+      schema:
+        type: string
+    model:
+      name: model
+      in: query
+      description: The model of the vehicle. Required if year or make is supplied.
+      schema:
+        type: string
+    vin:
+      name: vin
+      in: query
+      description: The vin of the vehicle. Required if year, make, and model are not
+        supplied. If the year, make, model, and vin are supplied and the decoded vin
+        does not match the year, make, and model supplied then the vin will be used.
+      schema:
+        type: string
+    base_vehicle_id:
+      name: base_vehicle_id
+      in: query
+      description: The ACES base vehicle id of the vehicle.
+      required: true
+      schema:
+        type: integer
+    submodel_id:
+      name: submodel_id
+      in: query
+      description: The ACES submodel id of the vehicle
+      schema:
+        type: integer
+    engine_base_id:
+      name: engine_base_id
+      in: query
+      description: The ACES engine base id of the vehicle
+      schema:
+        type: integer
+    fuel_id:
+      name: fuel_id
+      in: query
+      description: The ACES fuel id of the vehicle
+      schema:
+        type: integer
+    position_id:
+      name: position_id
+      in: query
+      description: The ACES position id of the position the products fit in the vehicle.
+      schema:
+        type: integer
+    category_identifier:
+      name: category_identifier
+      in: path
+      description: The identifier from the categories api call to search for products
+        in.
+      required: true
+      schema:
+        type: string
+    part_terminology_id:
+      name: part_terminology_id
+      in: path
+      description: The ACES category to search for products in.
+      required: true
+      schema:
+        type: string
+    search:
+      name: search
+      in: query
+      description: You must supply the year, make, model and a search term. You may
+        additionally supply the vin, but it is not required. If the vin is supplied
+        and the decoded vin does not match the year, make, and model supplied then
+        the vin will be used.
+      required: true
+      schema:
+        type: string
+    searchV2:
+      name: search
+      in: query
+      description: The terms to search for. This could include product names or mpns.
+      required: true
+      schema:
+        type: string
+    sku:
+      name: sku
+      in: path
+      description: The sku of the product to get offers for.
+      required: true
+      schema:
+        type: string
+    brand:
+      name: brand
+      in: query
+      description: Filter offers by brand. A single SKU or manufacturer part number
+        (MPN) can have two offers. For example, Honda and Acura can share the same
+        SKU but offer the product at a different price and warranty. By specifying
+        the brand the result is narrowed to the specified brand only.
+      schema:
+        type: string
+    latitude:
+      name: latitude
+      in: query
+      description: The latitude of the buyer. Required if longitude is provided.
+      schema:
+        type: string
+    longitude:
+      name: longitude
+      in: query
+      description: The longitude of the buyer. Required if latitude is provided.
+      schema:
+        type: string
+    postal_code:
+      name: postal_code
+      in: query
+      description: The postal code of the buyer. Required if latitude and longitude
+        are not provided.
+      schema:
+        type: string
+    seller_identifier:
+      name: seller_identifier
+      in: query
+      description: If provided, only an offer for this seller will be returned.
+      schema:
+        type: string
+    checkout_token:
+      name: checkout_token
+      in: query
+      description: The token from the checkout response.
+      required: true
+      schema:
+        type: string
+    order_number:
+      name: order_number
+      in: path
+      description: The RP order number provided when the order was created.
+      required: true
+      schema:
+        type: string
+    cancel_reason:
+      name: cancel_reason
+      in: query
+      description: The reason a cancellation is being requested
+      required: true
+      schema:
+        type: string
+        enum:
+        - Catalog Issue
+        - Customer Requested Cancellation
+        - Part Not Available
+        - Shipping Issue
+        - Other
+    order_number_v2:
+      name: order_number
+      in: path
+      description: The RP order number.
+      required: true
+      schema:
+        type: string
+    created_before:
+      name: created_before
+      in: query
+      description: Orders created before this date
+      schema:
+        type: string
+        format: date-time
+    created_after:
+      name: created_after
+      in: query
+      description: Orders created after this date
+      schema:
+        type: string
+        format: date-time
+    last_update_before:
+      name: last_update_before
+      in: query
+      description: Orders last updated before this date
+      schema:
+        type: string
+        format: date-time
+    last_update_after:
+      name: last_update_after
+      in: query
+      description: Orders last updated after this date
+      schema:
+        type: string
+        format: date-time
+    dms_export_before:
+      name: dms_export_before
+      in: query
+      description: Orders approved for DMS export before this date
+      schema:
+        type: string
+        format: date-time
+    dms_export_after:
+      name: dms_export_after
+      in: query
+      description: Orders approved for DMS export after after this date
+      schema:
+        type: string
+        format: date-time
+  requestBodies:
+    cart:
+      description: An array of cart item objects
+      content:
+        '*/*':
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CartItemModel'
+      required: true
+    return_url:
+      description: The URL to redirect to after a successful checkout.
+      content:
+        '*/*':
+          schema:
+            type: string
+      required: true
+    cancel_url:
+      description: The URL to redirect to after the user cancels checkout.
+      content:
+        '*/*':
+          schema:
+            type: string
+      required: true
+  securitySchemes:
+    basic:
+      type: http
+      description: RevolutionParts provides a production and a sandbox API username
+        and token for use with this API. The API username and token are submitted
+        with the HTTP request in the Authorization header. The format should be `<username>:<token>`
+        which is then base-64 encoded and appended to Basic in the authentication
+        header.
+      scheme: basic
+x-servers:
+- url: https://api.revolutionparts.com/v4
