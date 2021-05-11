@@ -1,0 +1,53 @@
+version: '3.7'
+
+networks:
+  kong-ee-net:
+    external: false
+
+services:
+  kong-ee-database:
+    image: postgres:9.6
+    environment:
+      POSTGRES_DB: kong
+      POSTGRES_USER: kong
+      POSTGRES_PASSWORD: kong
+    ports:
+      - "5432:5432"
+    networks:
+      - kong-ee-net
+
+  kong-migrations:
+    image: kong-ee
+    command: kong migrations bootstrap
+    depends_on:
+      - kong-ee-database
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-ee-database      K
+      KONG_PG_PASSWORD: kong
+      KONG_PASSWORD: kong
+    networks:
+      - kong-ee-net
+
+  kong-ee:
+    image: kong-ee
+    depends_on:
+      - kong-ee-database
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-ee-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: '0.0.0.0:8001'
+      KONG_ADMIN_GUI_URL: http://127.0.0.1:8002
+    networks:
+      - kong-ee-net
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+
